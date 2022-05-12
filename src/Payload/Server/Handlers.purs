@@ -28,6 +28,7 @@ import Payload.Server.Path as Path
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
+import Node.FS.Sync as NFS
 import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -39,7 +40,7 @@ data File = File String
 
 instance encodeResponseFile :: EncodeResponse File where
   encodeResponse (Response r@{ body: File path }) = do
-    exists <- lift $ FsAff.exists path
+    exists <- lift $ liftEffect $ NFS.exists path
     if not exists
       then throwError notFoundError
       else do
@@ -58,7 +59,7 @@ instance encodeResponseFile :: EncodeResponse File where
 
 instance readForeignFile :: ReadForeign File where
   readImpl f = File <$> readString f
-  
+
 fileSize :: Stats.Stats -> Int
 fileSize (Stats.Stats statsObj) = Int.round statsObj.size
 

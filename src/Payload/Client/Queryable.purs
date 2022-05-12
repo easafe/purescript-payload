@@ -2,7 +2,7 @@ module Payload.Client.Queryable where
 
 import Prelude
 
-import Affjax as AX
+import Affjax.Web as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
@@ -312,7 +312,7 @@ printResponse (Right {status, statusText, headers, body}) =
   where
     printStatus :: StatusCode -> String
     printStatus (StatusCode code) = show code
-    
+
     printHeaders :: Array ResponseHeader -> String
     printHeaders [] = ""
     printHeaders hdrs = (String.joinWith "  \n" (printHeader <$> hdrs)) <> "\n"

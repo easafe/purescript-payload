@@ -92,7 +92,7 @@ launch
   => Spec routesSpec
   -> handlers
   -> Effect Unit
-launch routeSpec handlers = Aff.launchAff_ (start_ routeSpec handlers)
+launch routeSpec handlers = Aff.launchAff_ (void $ do start_ routeSpec handlers)
 
 -- | Start server with default options and given route spec and handlers (no guards).
 start_
@@ -215,7 +215,7 @@ showUrl { method, path, query } = method <> " " <> fullPath
 showRouteUrl :: List Segment -> String
 showRouteUrl (method : rest) = show method <> " /" <> String.joinWith "/" (Array.fromFoldable $ show <$> rest)
 showRouteUrl Nil = ""
-  
+
 requestUrl :: HTTP.Request -> Either String RequestUrl
 requestUrl req = do
   let parsedUrl = Url.parse (HTTP.requestURL req)

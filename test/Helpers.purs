@@ -2,7 +2,7 @@ module Payload.Test.Helpers where
 
 import Prelude
 
-import Affjax as AX
+import Affjax.Web as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
@@ -56,7 +56,7 @@ withRoutes :: forall routesSpec handlers
   -> handlers
   -> Aff Unit
   -> Aff Unit
-withRoutes _ handlers = 
+withRoutes _ handlers =
   withServer (Spec :: Spec { guards :: {}, routes :: routesSpec })
              { guards: {}, handlers }
 
