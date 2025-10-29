@@ -10,7 +10,11 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Tuple (Tuple(..))
+import Data.DateTime
 import Foreign.Object (Object)
+import Data.DateTime.Instant as DDI
+import Safe.Coerce (coerce)
+import Data.Time.Duration (Milliseconds(..))
 import Foreign.Object as Object
 import Payload.Client.Internal.EncodeUri (encodeUri)
 
@@ -31,6 +35,13 @@ instance encodeQueryParamMaybe :: EncodeQueryParam a => EncodeQueryParam (Maybe 
   encodeQueryParam (Just val) = encodeQueryParam val
   encodeQueryParam Nothing = Nothing
 
+instance EncodeQueryParam DateTime where
+      encodeQueryParam = Just <<< show <<< dateTimeToNumber
+
+
+dateTimeToNumber ∷ DateTime → Number
+dateTimeToNumber = coerce <<< DDI.unInstant <<< DDI.fromDateTime
+
 class EncodeQueryParamMulti a where
   encodeQueryParamMulti :: a -> Maybe String
 
@@ -39,7 +50,7 @@ instance encodeQueryParamMultiObjectArrayString :: EncodeQueryParamMulti (Object
     where
       joinParams :: Array String -> String
       joinParams = String.joinWith "&"
-      
+
       encodeArray :: Tuple String (Array String) -> String
       encodeArray (Tuple k vals) = joinParams (encodeVal k <$> vals)
 

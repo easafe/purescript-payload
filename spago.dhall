@@ -30,6 +30,7 @@
   , "node-streams"
   , "node-url"
   , "nullable"
+  , "numbers"
   , "ordered-collections"
   , "prelude"
   , "record"

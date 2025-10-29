@@ -62,7 +62,7 @@ withRoutes :: forall routesSpec handlers
   -> handlers
   -> Aff Unit
   -> Aff Unit
-withRoutes _ handlers = 
+withRoutes _ handlers =
   withServer (Spec :: Spec { guards :: {}, routes :: routesSpec })
              { guards: {}, handlers }
 

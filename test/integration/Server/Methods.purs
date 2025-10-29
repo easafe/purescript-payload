@@ -6,11 +6,12 @@ import Data.Maybe (Maybe(..))
 import Payload.ResponseTypes (Empty(..))
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
+import Test.Unit.Assert as Assert
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Spec(Spec), OPTIONS)
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
-  
+
 tests :: TestSuite
 tests = do
   let { get, options, put, post, head, delete } = Helpers.request "http://localhost:3000"

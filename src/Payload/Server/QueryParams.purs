@@ -11,7 +11,11 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Int as Int
 import Data.Maybe (Maybe(..), maybe)
+import Data.DateTime.Instant as DDI
+import Data.Time.Duration as DTD
 import Foreign.Object (Object)
+import Data.Number as DNM
+import Data.DateTime(DateTime)
 import Foreign.Object as Object
 import Payload.Server.Internal.Querystring (ParsedQuery)
 
@@ -64,6 +68,21 @@ instance decodeQueryParamMaybe :: DecodeQueryParam a => DecodeQueryParam (Maybe 
       Just [] -> Right Nothing
       Just [""] -> Right Nothing
       Just _ -> Just <$> decodeQueryParam queryObj queryKey
+
+instance DecodeQueryParam DateTime where
+      decodeQueryParam query key =
+            case Object.lookup key query of
+                  Nothing → Left $ QueryParamNotFound { key, queryObj: query }
+                  Just [ value ] → maybe (errorDecoding query key) (Right <<< DDI.toDateTime) (DDI.instant <<< DTD.Milliseconds =<< DNM.fromString value)
+                  _ → errorDecoding query key
+
+errorDecoding ∷ ∀ a. Object (Array String) → String → Either DecodeError a
+errorDecoding queryObj key = Left $ QueryDecodeError
+      { values: []
+      , message: "Could not decode parameter " <> key
+      , key
+      , queryObj
+      }
 
 class DecodeQueryParamMulti a where
   decodeQueryParamMulti :: ParsedQuery -> Either DecodeError a
