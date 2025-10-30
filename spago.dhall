@@ -35,6 +35,7 @@
   , "prelude"
   , "record"
   , "refs"
+  , "safe-coerce"
   , "simple-json"
   , "strings"
   , "stringutils"

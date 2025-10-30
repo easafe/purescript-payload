@@ -14,7 +14,7 @@ import Node.Stream (Read, Stream)
 import Node.Stream as Stream
 import Payload.Client.Fetch (FetchResponse)
 import Payload.Client.Fetch as Fetch
-import Payload.ResponseTypes (ResponseBody(..))
+import Payload.ResponseTypes (ResponseBody(..), Empty(..))
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Warn, Quote, Text)
 import Simple.JSON as SimpleJson
@@ -66,7 +66,7 @@ instance decodeResponseString :: DecodeResponse String where
   decodeResponse resp = Fetch.text resp.raw
                         # map (lmap (show >>> unknown))
 else instance decodeResponseReadableStream :: DecodeResponse (ReadableStream Uint8Array) where
-  decodeResponse resp = case Fetch.body resp.raw of 
+  decodeResponse resp = case Fetch.body resp.raw of
     Just body -> pure (Right body)
     Nothing -> pure (Left (unknown "Stream body was empty"))
 else instance decodeResponseStream :: DecodeResponse (Stream r) where
@@ -85,6 +85,12 @@ else instance decodeResponseArray ::
     text <- Fetch.text resp.raw
     pure $ text # lmap (show >>> unknown)
            >>= (\body -> SimpleJson.readJSON body # lmap (jsonDecodeError body))
+else instance DecodeResponse Empty where
+  decodeResponse resp = do
+    text <- Fetch.text resp.raw
+    case text of
+            Left l -> pure <<< Left <<< unknown $ show l
+            _ -> pure $ Right Empty
 
 decodeResponseUnimplemented :: forall body
   . Warn (Text "API client cannot query all of endpoints in API spec:"
