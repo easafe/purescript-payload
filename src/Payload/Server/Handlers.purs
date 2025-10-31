@@ -30,7 +30,6 @@ import Payload.Server.Path as Path
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
-import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Handler for returning a file at the given path.

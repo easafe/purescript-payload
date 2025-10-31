@@ -86,15 +86,17 @@ import Data.Newtype (over)
 import Node.Stream (Read, Readable, Stream)
 import Node.Stream as Stream
 import Payload.ContentType as ContentType
+import Data.Argonaut.Encode (class EncodeJson)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Empty, Failure(..), HttpStatus, Json(..), RawResponse, Response(..), ResponseBody(..), Result, UnsafeStream)
 import Payload.Server.Status as Status
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Fail, Quote, Text)
-import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy)
+import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut(stringify)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Streams.ReadableStream (ReadableStream)
 
@@ -143,14 +145,14 @@ else instance toSpecResponseEitherResponseVal
   => ToSpecResponse docRoute (Either (Response err) a) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
-    throwError (Error raw) 
+    throwError (Error raw)
   toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherResponseResponse
   :: EncodeResponse err
   => ToSpecResponse docRoute (Either (Response err) (Response a)) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
-    throwError (Error raw) 
+    throwError (Error raw)
   toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseEitherValVal ::
   ( EncodeResponse a
@@ -158,7 +160,7 @@ else instance toSpecResponseEitherValVal ::
   ) => ToSpecResponse docRoute (Either err a) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse (internalError res)
-    throwError (Error raw) 
+    throwError (Error raw)
   toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherValResponse ::
   ( EncodeResponse a
@@ -166,7 +168,7 @@ else instance toSpecResponseEitherValResponse ::
   ) => ToSpecResponse docRoute (Either err (Response a)) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse (internalError res)
-    throwError (Error raw) 
+    throwError (Error raw)
   toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseResponse
   :: EncodeResponse a
@@ -201,20 +203,20 @@ class EncodeResponse r where
 instance encodeResponseResponseBody :: EncodeResponse ResponseBody where
   encodeResponse = pure
 else instance encodeResponseRecord ::
-  ( SimpleJson.WriteForeign (Record r)
+  ( EncodeJson (Record r)
   ) => EncodeResponse (Record r) where
   encodeResponse (Response r) = encodeResponse (Response $ r { body = Json r.body })
 else instance encodeResponseArray ::
-  ( SimpleJson.WriteForeign (Array r)
+  ( EncodeJson (Array r)
   ) => EncodeResponse (Array r) where
   encodeResponse (Response r) = encodeResponse (Response $ r { body = Json r.body })
 else instance encodeResponseJson ::
-  ( SimpleJson.WriteForeign r
+  ( EncodeJson r
   ) => EncodeResponse (Json r) where
   encodeResponse (Response r@{ body: Json json }) = pure $ Response $
         { status: r.status
         , headers: Headers.setIfNotDefined "content-type" ContentType.json r.headers
-        , body: StringBody (SimpleJson.writeJSON json) }
+        , body: StringBody (stringify $ encodeJson json) }
 else instance encodeResponseString :: EncodeResponse String where
   encodeResponse (Response r) = pure $ Response
                    { status: r.status

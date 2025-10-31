@@ -11,13 +11,15 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Foreign (MultipleErrors)
 import Node.Stream (Read, Stream)
+import Data.Argonaut.Decode.Class(class DecodeJson, decodeJson)
+import Data.Argonaut.Decode.Error as Error
 import Node.Stream as Stream
 import Payload.Client.Fetch (FetchResponse)
 import Payload.Client.Fetch as Fetch
 import Payload.ResponseTypes (ResponseBody(..), Empty(..))
+import Data.Argonaut.Parser(jsonParser)
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Warn, Quote, Text)
-import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Streams.ReadableStream (ReadableStream)
@@ -25,7 +27,7 @@ import Web.Streams.ReadableStream (ReadableStream)
 data DecodeResponseError
   = InternalDecodeError { message :: String }
   | UnhandledResponseError { message :: String }
-  | JsonDecodeError { body :: String, errors :: MultipleErrors }
+  | JsonDecodeError { body :: String, errors :: Error.JsonDecodeError }
   | UnknownError { message :: String }
 
 instance showDecodeResponseError :: Show DecodeResponseError where
@@ -56,7 +58,7 @@ unhandled message = UnhandledResponseError { message }
 unknown :: String -> DecodeResponseError
 unknown message = UnknownError { message }
 
-jsonDecodeError :: String -> MultipleErrors -> DecodeResponseError
+jsonDecodeError :: String -> Error.JsonDecodeError -> DecodeResponseError
 jsonDecodeError body errors = JsonDecodeError { body, errors }
 
 class DecodeResponse body where
@@ -72,19 +74,23 @@ else instance decodeResponseReadableStream :: DecodeResponse (ReadableStream Uin
 else instance decodeResponseStream :: DecodeResponse (Stream r) where
   decodeResponse = decodeResponseUnimplemented
 else instance decodeResponseRecord ::
-  ( SimpleJson.ReadForeign (Record r)
+  ( DecodeJson (Record r)
   ) => DecodeResponse (Record r) where
   decodeResponse resp = do
     text <- Fetch.text resp.raw
     pure $ text # lmap (show >>> unknown)
-           >>= (\body -> SimpleJson.readJSON body # lmap (jsonDecodeError body))
+           >>= (\body -> case jsonParser body of
+                          Left e -> Left $ jsonDecodeError body (Error.MissingValue)
+                          Right b -> decodeJson b # lmap (jsonDecodeError body))
 else instance decodeResponseArray ::
-  ( SimpleJson.ReadForeign (Array r)
+  ( DecodeJson (Array r)
   ) => DecodeResponse (Array r) where
   decodeResponse resp = do
     text <- Fetch.text resp.raw
     pure $ text # lmap (show >>> unknown)
-           >>= (\body -> SimpleJson.readJSON body # lmap (jsonDecodeError body))
+           >>= (\body -> case jsonParser body of
+                          Left e -> Left $ jsonDecodeError body (Error.MissingValue)
+                          Right b -> decodeJson b # lmap (jsonDecodeError body))
 else instance DecodeResponse Empty where
   decodeResponse resp = do
     text <- Fetch.text resp.raw
